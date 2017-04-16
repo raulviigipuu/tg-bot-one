@@ -68,15 +68,17 @@ def handle_updates(updates, token):
 	"""Handle updates from Telegram"""
 	rootLogger.debug("Handling updates")
 	for update in updates["result"]:
-		if not "message" in update: # TODO: it can also be "edited_message"
+		if not "message" in update or "edited_message" in update:
 			return
-		chat = update["message"]["chat"]["id"]
+		message_element = update["message"] if "message" in update else update["edited_message"]
+		chat = message_element["chat"]["id"]
 		rootLogger.debug(json.dumps(update))
-		if "left_chat_participant" in update["message"]:
-			left_user = update["message"]["left_chat_participant"]["first_name"]
+		if "left_chat_participant" in message_element:
+			left_user = message_element["left_chat_participant"]["first_name"]
+			update_last_leaver_in_file(left_user, chat)
 			send_message(left_user + " has left from chat", chat, token)
-		elif "text" in update["message"]:
-			handle_message_text(update["message"]["text"], chat, token)
+		elif "text" in message_element:
+			handle_message_text(message_element["text"], chat, token)
 
 
 def handle_message_text(message_text, chat, token):
@@ -85,27 +87,40 @@ def handle_message_text(message_text, chat, token):
 	if message_text.startswith("/"):
 		handle_command(message_text, chat, token)
 
+
 def help_message():
 	"""Returns help message"""
 	return """
 		Commands:
 		/start - standard command, not useful for anything atm
 		/help - returns help message, you are reading it now
+		/last - last user that left the chat
 	"""
 
-def last_user_who_left():
+
+def update_last_leaver_in_file(left_user, chat):
+	"""Saves new value to file"""
+	data_path_str = "./data" + str(chat)
+	create_dir_if_not_exists(data_path_str)
+	path_str = data_path_str + "/last.txt"
+	create_file_if_not_exists(path_str)
+	new_value = open(path_str, 'w')
+	new_value.write(left_user)
+	new_value.close()
+
+def last_user_who_left(chat):
 	"""Returns last user who left the chat or default message"""
-	path_str = "./last.txt"
+	data_path_str = "./data" + str(chat)
+	create_dir_if_not_exists(data_path_str)
+	path_str = data_path_str + "/last.txt"
+	create_file_if_not_exists(path_str)
 	last_goner_file = Path(path_str)
-	# check if file exists
-	if last_goner_file.exists() and last_goner_file.is_file():
-		# and is not empty
-		if last_goner_file.stat().st_size > 0:
-			with open(path_str, mode="r", encoding="utf8") as f:
-				return f
-	else:
-		# creating empty file
-		open(last_goner_file, 'a').close()
+	# check if not empty
+	if last_goner_file.stat().st_size > 0:
+		file_handler = open(path_str, 'r')
+		file_content = file_handler.readline()
+		file_handler.close()
+		return file_content
 	return "Nobody has ever quited from here"
 
 
@@ -116,8 +131,8 @@ def handle_command(text, chat, token):
 		command_output = "I was born ready."
 	elif text.startswith("/help"):
 		command_output = help_message()
-	#elif text.startswith("/last"):
-		#command_output = last_user_who_left()
+	elif text.startswith("/last"):
+		command_output = last_user_who_left(chat)
 	send_message(command_output, chat, token)
 
 
@@ -147,12 +162,25 @@ def get_conf(conf_file):
 def setup_file_logger():
 	"""Ensures that log directory exists"""
 	log_dir_path = "./log/"
-	# create folder if it does not exists
-	if not os.path.exists(log_dir_path):
-		os.makedirs(log_dir_path)
+	create_dir_if_not_exists(log_dir_path)
 	file_handler = logging.FileHandler("{0}/{1}.log".format(log_dir_path, "app"))
 	file_handler.setFormatter(logFormatter)
 	rootLogger.addHandler(file_handler)
+
+
+def create_dir_if_not_exists(path_str):
+	"""create folder if it does not exists"""
+	if not os.path.exists(path_str):
+		os.makedirs(path_str)
+
+def create_file_if_not_exists(path_str):
+	"""Create file if it's not existing"""
+	file_path = Path(path_str)
+	# check if file exists
+	if not file_path.exists() or not file_path.is_file():
+		# creating empty file
+		open(path_str, 'a').close()
+
 
 def main():
 	"""Main function"""
