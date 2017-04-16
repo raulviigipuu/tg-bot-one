@@ -166,7 +166,7 @@ def main():
 	last_update_id = None
 	while True:
 		updates = get_updates(token, last_update_id)
-		if len(updates["result"]) > 0:
+		if "result" in updates and len(updates["result"]) > 0:
 			handle_updates(updates, token)
 			last_update_id = get_last_update_id(updates) + 1
 		time.sleep(1)
