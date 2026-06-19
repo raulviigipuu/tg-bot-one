@@ -14,12 +14,18 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Available commands:\n"
         "/start - start the bot\n"
         "/help - show help\n"
-        "/status - show bot status"
+        "/status - show bot status\n"
+        "/user - show your Telegram user ID"
     )
 
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Status: running 🟢")
+
+
+async def user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await update.message.reply_text(f"User ID: {user.id}")
 
 
 def main():
@@ -32,6 +38,7 @@ def main():
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("status", status_command))
+    app.add_handler(CommandHandler("user", user_command))
 
     print("Bot is running. Press Ctrl+C to stop.")
     app.run_polling()

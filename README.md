@@ -7,6 +7,7 @@ Commands:
 - `/start`
 - `/help`
 - `/status`
+- `/user`
 
 ## Setup
 
