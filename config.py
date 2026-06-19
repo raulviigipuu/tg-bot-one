@@ -27,6 +27,7 @@ def load_config() -> Config:
         admin_user_ids=admin_user_ids,
     )
 
+
 def parse_admin_user_ids(value: str) -> set[int]:
     result = set()
 
@@ -39,3 +40,7 @@ def parse_admin_user_ids(value: str) -> set[int]:
         result.add(int(item))
 
     return result
+
+
+def is_admin(config: Config, user_id: int) -> bool:
+    return user_id in config.admin_user_ids
